@@ -1,5 +1,19 @@
+//
+// features
+//
+
+Person = First | Second | Third.
+
+Number = Singular | Plural.
+
+Case = Nominative | Objective.
+
+//
+// main grammar
+// 
+
 sentence =
-  nounPhrase(Number) verbPhrase.
+  nounPhrase(Person, Number, Nominative) verbPhrase(Person, Number).
   // hip like "Just saw Charlie slap a guy."
   //verbPhrase
   //questionPhrase 
@@ -28,14 +42,6 @@ verb(Third,  Singular) =
 verb(Third,  Plural) = 
   copula(Third, Plural) |
   "slap".
-
-//
-// features
-//
-
-Person = First | Second | Third.
-
-Number = Singular | Plural.
 
 //
 // vocab

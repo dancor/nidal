@@ -1,11 +1,17 @@
 module Main where
 
 import Control.Applicative hiding (many, (<|>))
+import Control.Arrow
 import Control.Monad
+import Control.Monad.Random
+import Data.Either
 import Data.Maybe
+import FUtil hiding (satisfy)
 import Text.Parsec hiding (parse)
+import qualified Data.Map as M
+import qualified Data.Set as S
 
-data Grammar = Grammar [Either FeatureRule GrammarRule]
+data Grammar = Grammar (M.Map String [String]) [GrammarRule]
   deriving (Eq, Show)
 
 data StringLiteral =
@@ -17,11 +23,6 @@ type GrammarRulePart = (String, [String])
 data GrammarRule =
   GrammarRule GrammarRulePart [[Either StringLiteral GrammarRulePart]]
   deriving (Eq, Show)
-
-data FeatureRule =
-  FeatureRule String [String]
-  deriving (Eq, Show)
-
 
 class Parsable a where
   parse :: Parsec String () a
@@ -47,20 +48,28 @@ instance Parsable GrammarRule where
     sepBy (many1 ((Left <$> parse <|> Right <$> parseRulePart) <* parseWs))
           (char '|' >> parseWs) <* char '.'
 
-instance Parsable FeatureRule where
-  parse = liftM2 FeatureRule parseFeature $
-    parseWs >> char '=' >> parseWs >>
-    sepBy (parseFeature <* parseWs) (char '|' >> parseWs) <* char '.'
+parseFeatureRule = liftM2 (,) parseFeature $
+  parseWs >> char '=' >> parseWs >>
+  sepBy (parseFeature <* parseWs) (char '|' >> parseWs) <* char '.'
 
 instance Parsable Grammar where
-  parse = Grammar <$> many1 ((Left <$> parse <|> Right <$> parse) <* parseWs)
+  parse = fmap (uncurry Grammar . first M.fromList . partitionEithers) $
+    parseWs >>
+    many1 ((Left <$> parseFeatureRule <|> Right <$> parse) <* parseWs)
 
 printG :: Grammar -> IO ()
 printG = print
 
+randProduction :: String -> [M.Map String (S.Set String)] -> Grammar ->
+  Rand StdGen [String]
+randProduction rule features grammar = undefined
+
 main :: IO ()
 main = do
-  grammar <- readFile "grammar"
-  case runParser (parse <* eof) () "grammar" grammar of
+  grammarContent <- readFile "grammar"
+  case runParser (parse <* eof) () "grammar" grammarContent of
     Left err -> print err
-    Right g -> printG g
+    Right grammar -> do
+      sentence <- evalRandIO $ randProduction "sentence" [] grammar
+      print sentence
+      --printG grammar

@@ -5,7 +5,7 @@ license-file:   LICENSE
 author:         dan corson <danl@alum.mit.edu>
 synopsis:       guess sentence acronyms
 build-type:     Simple
-build-depends:  base, haskell98, parsec >= 3
+build-depends:  base, haskell98, parsec >= 3, containers, MonadRandom, FUtil
 
 executable:     nidal
 main-is:        Main.hs
