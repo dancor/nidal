@@ -20,8 +20,10 @@ data StringLiteral =
 
 type GrammarRulePart = (String, [String])
 
-data GrammarRule =
-  GrammarRule GrammarRulePart [[Either StringLiteral GrammarRulePart]]
+data GrammarRule = GrammarRule {
+  grammarRuleLHS :: GrammarRulePart,
+  grammarRuleRHS :: [[Either StringLiteral GrammarRulePart]]
+  }
   deriving (Eq, Show)
 
 class Parsable a where
@@ -62,7 +64,10 @@ printG = print
 
 randProduction :: String -> [M.Map String (S.Set String)] -> Grammar ->
   Rand StdGen [String]
-randProduction rule features grammar = undefined
+randProduction rule features (Grammar gFeatures gRules) =
+  return $ map show rulesMatchingRule
+  where
+  rulesMatchingRule = filter ((== rule) . fst . grammarRuleLHS) gRules
 
 main :: IO ()
 main = do
@@ -70,6 +75,7 @@ main = do
   case runParser (parse <* eof) () "grammar" grammarContent of
     Left err -> print err
     Right grammar -> do
-      sentence <- evalRandIO $ randProduction "sentence" [] grammar
-      print sentence
-      --printG grammar
+      --sentence <- evalRandIO $ randProduction "sentence" [] grammar
+      sentence <- evalRandIO $ randProduction "pronoun" [] grammar
+      --print sentence
+      mapM_ print sentence
