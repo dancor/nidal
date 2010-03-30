@@ -47,14 +47,14 @@ verb(Third,  Plural) =
 // vocab
 //
 
-pronoun(First,  Singular, Nominitive) = "I".
+pronoun(First,  Singular, Nominative) = "I".
 pronoun(First,  Singular, Objective)  = "me".
-pronoun(First,  Plural,   Nominitive) = "we".
+pronoun(First,  Plural,   Nominative) = "we".
 pronoun(First,  Plural,   Objective)  = "us".
 pronoun(Second, Number,   Case)       = "you".
-pronoun(Third,  Singular, Nominitive) = "he" | "she" | "it".
+pronoun(Third,  Singular, Nominative) = "he" | "she" | "it".
 pronoun(Third,  Singular, Objective)  = "him" | "her" | "it".
-pronoun(Third,  Plural,   Nominitive) = "they".
+pronoun(Third,  Plural,   Nominative) = "they".
 pronoun(Third,  Plural,   Objective)  = "them".
 
 copula(First,  Singular) = "am".

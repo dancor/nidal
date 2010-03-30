@@ -18,7 +18,11 @@ data StringLiteral =
   StringLiteral String
   deriving (Eq, Show)
 
-type GrammarRulePart = (String, [String])
+data GrammarRulePart = GrammarRulePart {
+  grammarRulePartName :: String,
+  grammarRulePartFeatures :: [String]
+  }
+  deriving (Eq, Show)
 
 data GrammarRule = GrammarRule {
   grammarRuleLHS :: GrammarRulePart,
@@ -40,14 +44,15 @@ parseRuleWord = liftM2 (:) lower (many alphaNum)
 
 parseFeature  = liftM2 (:) upper (many alphaNum)
 
-parseRulePart :: Parsec String () (String, [String])
-parseRulePart = liftM2 (,) parseRuleWord . fmap (fromMaybe []) . optionMaybe $
-  char '(' >> sepBy (parseWs >> parseFeature <* parseWs) (char ',') <* char ')'
+instance Parsable GrammarRulePart where
+  parse = liftM2 GrammarRulePart parseRuleWord . fmap (fromMaybe []) .
+    optionMaybe $ char '(' >>
+    sepBy (parseWs >> parseFeature <* parseWs) (char ',') <* char ')'
 
 instance Parsable GrammarRule where
-  parse = liftM2 GrammarRule parseRulePart $
+  parse = liftM2 GrammarRule parse $
     parseWs >> char '=' >> parseWs >>
-    sepBy (many1 ((Left <$> parse <|> Right <$> parseRulePart) <* parseWs))
+    sepBy (many1 ((Left <$> parse <|> Right <$> parse) <* parseWs))
           (char '|' >> parseWs) <* char '.'
 
 parseFeatureRule = liftM2 (,) parseFeature $
@@ -62,12 +67,34 @@ instance Parsable Grammar where
 printG :: Grammar -> IO ()
 printG = print
 
+featureParent :: String -> (M.Map String [String]) -> String
+featureParent feature featureMap = if M.member feature featureMap
+  then feature
+  else fst . head . filter ((feature `elem`) . snd) $ M.toList featureMap
+
+{-
 randProduction :: String -> [M.Map String (S.Set String)] -> Grammar ->
   Rand StdGen [String]
-randProduction rule features (Grammar gFeatures gRules) =
-  return $ map show rulesMatchingRule
+randProduction ruleName features (Grammar gFeatures gRules) =
+  --return $ map show rulesMatchingRule
+  return $ map show ruleFeatures
   where
-  rulesMatchingRule = filter ((== rule) . fst . grammarRuleLHS) gRules
+  rulesMatchingRule = filter
+    ((== ruleName) . grammarRulePartName . grammarRuleLHS) gRules
+  ruleFeatures = map (flip featureParent gFeatures) . grammarRulePartFeatures .
+    grammarRuleLHS $ head rulesMatchingRule
+  --rulesMatchingFeat = filter ((== rule) . fst . grammarRuleLHS) rulesMatchingRule
+-}
+
+-- this will get interesting with an infinite-size-language grammar
+allProductions :: String -> [M.Map String (S.Set String)] -> Grammar ->
+  [[String]]
+allProductions ruleName featureConstraints (Grammar gFeatureMap gRules) =
+  where
+  rulesMatchingRule = filter
+    ((== ruleName) . grammarRulePartName . grammarRuleLHS) gRules
+  ruleFeatures = map (flip featureParent gFeatures) . grammarRulePartFeatures .
+    grammarRuleLHS $ head rulesMatchingRule
 
 main :: IO ()
 main = do
